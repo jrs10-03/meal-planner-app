@@ -155,7 +155,8 @@ export function useAppState() {
     }),
 
     // Plan / weeks
-    startNewWeek: () => mutate((d) => {
+    // startDateISO: optional; the week runs 7 days from this date (defaults to today).
+    startNewWeek: (startDateISO) => mutate((d) => {
       if (d.currentWeek && d.currentWeek.slots.length > 0) {
         d.weekHistory.unshift({
           id: d.currentWeek.id,
@@ -164,16 +165,34 @@ export function useAppState() {
           endedAt: nowISO(),
           slots: d.currentWeek.slots.map((s) => {
             const r = d.recipes.find((x) => x.id === s.recipeId)
-            return { recipeId: s.recipeId, recipeName: r ? r.name : s.recipeName, type: s.type, day: s.day }
+            return {
+              recipeId: s.recipeId,
+              recipeName: r ? r.name : s.recipeName,
+              type: s.type,
+              day: s.day,
+              kind: s.kind || 'recipe',
+              note: s.note || '',
+            }
           }),
         })
       }
-      d.currentWeek = { id: uid(), label: weekLabel(new Date()), startDate: nowISO(), slots: [] }
+      const start = startDateISO ? new Date(startDateISO) : new Date()
+      d.currentWeek = { id: uid(), label: weekLabel(start), startDate: start.toISOString(), slots: [] }
     }),
     addSlot: (recipeId) => mutate((d) => {
       if (!d.currentWeek) d.currentWeek = { id: uid(), label: weekLabel(new Date()), startDate: nowISO(), slots: [] }
       const r = d.recipes.find((x) => x.id === recipeId)
-      d.currentWeek.slots.push({ id: uid(), recipeId, recipeName: r ? r.name : 'Recipe', type: 'dinner', day: null })
+      d.currentWeek.slots.push({ id: uid(), kind: 'recipe', recipeId, recipeName: r ? r.name : 'Recipe', type: 'dinner', day: null, note: '' })
+    }),
+    // Non-recipe slots: 'out' (eating out) or 'leftovers'. No shopping-list impact.
+    addSpecialSlot: (kind) => mutate((d) => {
+      if (!d.currentWeek) d.currentWeek = { id: uid(), label: weekLabel(new Date()), startDate: nowISO(), slots: [] }
+      const name = kind === 'out' ? 'Eating out' : 'Leftovers'
+      d.currentWeek.slots.push({ id: uid(), kind, recipeId: null, recipeName: name, type: 'dinner', day: null, note: '' })
+    }),
+    setSlotNote: (slotId, note) => mutate((d) => {
+      const s = d.currentWeek?.slots.find((x) => x.id === slotId)
+      if (s) s.note = note
     }),
     removeSlot: (slotId) => mutate((d) => {
       if (d.currentWeek) d.currentWeek.slots = d.currentWeek.slots.filter((s) => s.id !== slotId)

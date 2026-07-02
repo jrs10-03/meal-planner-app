@@ -11,8 +11,10 @@ using it across devices. Fully functional offline and unsynced.
   AI parser (your own Anthropic API key). Scale any recipe down to 2 servings. Sort by
   A–Z, most cooked, or "haven't made in a while."
 - **Plan** — build the week as a flexible list of meal slots, each flagged Dinner or
-  Lunch. Mark meals "Cooked it" to bump a per-recipe counter. Past weeks archive
-  automatically.
+  Lunch. Each week runs 7 days from a start date you pick when creating it; slot day
+  labels show the actual dates. Quick-add **Eating out** and **Leftovers** slots (with an
+  optional note) to notate non-cooking nights — they never touch the shopping list. Mark
+  meals "Cooked it" to bump a per-recipe counter. Past weeks archive automatically.
 - **List** — an auto-generated shopping list grouped by aisle. Shows quantities only
   when the amount is large (3+ recipes or over a per-unit threshold); otherwise just the
   item name. Check items off, add one-offs, copy to clipboard, clear when done.
