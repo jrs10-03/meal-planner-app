@@ -194,6 +194,8 @@ export function useAppState() {
       }
       const start = startDateISO ? new Date(startDateISO) : new Date()
       d.currentWeek = { id: uid(), label: weekLabel(start), startDate: start.toISOString(), slots: [] }
+      // Fresh week -> fresh list: old checks/removals shouldn't suppress new ingredients.
+      d.list = { checked: {}, manual: [], removed: {} }
     }),
     addSlot: (recipeId) => mutate((d) => {
       if (!d.currentWeek) d.currentWeek = { id: uid(), label: weekLabel(new Date()), startDate: nowISO(), slots: [] }
@@ -243,7 +245,27 @@ export function useAppState() {
       if (m) m.checked = !m.checked
     }),
     removeManual: (id) => mutate((d) => { d.list.manual = d.list.manual.filter((m) => m.id !== id) }),
-    clearList: () => mutate((d) => { d.list.checked = {}; d.list.manual = [] }),
+    // Delete a single generated item from the list (it stays gone until a new week).
+    removeListItem: (key) => mutate((d) => {
+      d.list.removed = d.list.removed || {}
+      d.list.removed[key] = true
+      delete d.list.checked[key]
+    }),
+    // Add an item to the pantry staples (excluded from all future lists) and remove it.
+    stapleListItem: (name, key) => mutate((d) => {
+      const clean = name.trim().toLowerCase()
+      if (clean && !d.staples.some((s) => s.toLowerCase() === clean)) d.staples.push(clean)
+      d.list.removed = d.list.removed || {}
+      d.list.removed[key] = true
+      delete d.list.checked[key]
+    }),
+    // Clear actually removes the current items (generated + manual), not just unchecks.
+    clearList: (keys = []) => mutate((d) => {
+      d.list.removed = d.list.removed || {}
+      for (const k of keys) d.list.removed[k] = true
+      d.list.checked = {}
+      d.list.manual = []
+    }),
 
     // Settings
     setStaples: (staples) => mutate((d) => { d.staples = staples }),

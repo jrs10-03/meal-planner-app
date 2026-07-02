@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppState } from './useAppState.js'
+import { useKeyboardInset } from './components/ui.jsx'
 import { Icon } from './components/Icons.jsx'
 import RecipesTab from './components/RecipesTab.jsx'
 import PlanTab from './components/PlanTab.jsx'
@@ -25,6 +26,7 @@ const DOT = {
 
 export default function App() {
   const { state, actions, sync } = useAppState()
+  useKeyboardInset()
   const [tab, setTab] = useState('recipes')
   const [gearOpen, setGearOpen] = useState(false)
   const syncConfigured = !!state.settings.gistToken
@@ -61,7 +63,7 @@ export default function App() {
         </nav>
       </header>
 
-      <main>
+      <main style={{ paddingBottom: 'var(--kb, 0px)' }}>
         {tab === 'recipes' && <RecipesTab state={state} actions={actions} />}
         {tab === 'plan' && <PlanTab state={state} actions={actions} />}
         {tab === 'list' && <ListTab state={state} actions={actions} />}

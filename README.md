@@ -17,7 +17,9 @@ using it across devices. Fully functional offline and unsynced.
   meals "Cooked it" to bump a per-recipe counter. Past weeks archive automatically.
 - **List** — an auto-generated shopping list grouped by aisle. Shows quantities only
   when the amount is large (3+ recipes or over a per-unit threshold); otherwise just the
-  item name. Check items off, add one-offs, copy to clipboard, clear when done.
+  item name. Check items off, add one-offs, copy to clipboard. Swipe an item left to
+  delete it or promote it to the staples list; Clear removes everything for the next
+  week (a new week also resets the list).
 - **Settings** (gear) — pantry staples to exclude, JSON backup export/import, Anthropic
   API key, and GitHub Gist sync.
 

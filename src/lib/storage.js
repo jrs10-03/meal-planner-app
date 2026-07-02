@@ -43,6 +43,7 @@ export function makeDefaultState() {
     list: {
       checked: {}, // normalizedName -> true
       manual: [], // [{ id, name, checked }]
+      removed: {}, // normalizedName -> true; generated items the user deleted/cleared
     },
     staples: [...DEFAULT_STAPLES],
     settings: {

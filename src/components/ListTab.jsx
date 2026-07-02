@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './Icons.jsx'
-import { ConfirmButton, EmptyState, Toast } from './ui.jsx'
+import { ConfirmButton, EmptyState, SwipeRow, Toast } from './ui.jsx'
 import { buildShoppingList, listToText } from '../lib/aggregate.js'
 
 export default function ListTab({ state, actions }) {
@@ -11,28 +11,45 @@ export default function ListTab({ state, actions }) {
   const grouped = useMemo(() => {
     const slots = currentWeek?.slots || []
     const planned = slots.map((s) => recipes.find((r) => r.id === s.recipeId)).filter(Boolean)
+    const removed = list.removed || {}
     return buildShoppingList(planned, staples)
-  }, [currentWeek, recipes, staples])
+      .map((g) => ({ ...g, items: g.items.filter((i) => !removed[i.key]) }))
+      .filter((g) => g.items.length > 0)
+  }, [currentWeek, recipes, staples, list.removed])
 
   const totalItems = grouped.reduce((n, g) => n + g.items.length, 0) + list.manual.length
   const checkedCount = grouped.reduce((n, g) => n + g.items.filter((i) => list.checked[i.key]).length, 0)
     + list.manual.filter((m) => m.checked).length
 
+  function flash(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 1500)
+  }
+
   async function copy() {
     const text = listToText(grouped, list.checked, list.manual)
     try {
       await navigator.clipboard.writeText(text)
-      setToast('Copied to clipboard')
+      flash('Copied to clipboard')
     } catch {
-      setToast('Copy failed — select and copy manually')
+      flash('Copy failed — select and copy manually')
     }
-    setTimeout(() => setToast(''), 1500)
   }
 
   function addManual() {
     if (!manual.trim()) return
     actions.addManual(manual)
     setManual('')
+  }
+
+  function clearAll() {
+    actions.clearList(grouped.flatMap((g) => g.items.map((i) => i.key)))
+    flash('List cleared')
+  }
+
+  function staple(it) {
+    actions.stapleListItem(it.name, it.key)
+    flash(`"${it.name}" added to staples`)
   }
 
   if (totalItems === 0) {
@@ -57,7 +74,7 @@ export default function ListTab({ state, actions }) {
         </div>
         <div className="flex gap-2">
           <button className="btn-outline" onClick={copy}><Icon.Copy /> Copy</button>
-          <ConfirmButton className="btn-outline text-red-500" confirmLabel="Clear all" onConfirm={actions.clearList}>Clear</ConfirmButton>
+          <ConfirmButton className="btn-outline text-red-500" confirmLabel="Clear all" onConfirm={clearAll}>Clear</ConfirmButton>
         </div>
       </div>
 
@@ -80,13 +97,18 @@ export default function ListTab({ state, actions }) {
                   const isChecked = !!list.checked[it.key]
                   return (
                     <li key={it.key}>
-                      <button className="flex w-full items-center gap-3 px-3 py-2.5 text-left" onClick={() => actions.toggleChecked(it.key)}>
-                        <span className="tick" data-checked={isChecked}>{isChecked && <Icon.Check />}</span>
-                        <span className={isChecked ? 'flex-1 text-ink-faint line-through' : 'flex-1'}>
-                          {it.name}
-                          {it.note && <span className="ml-1.5 text-xs text-ink-faint">— {it.note}</span>}
-                        </span>
-                      </button>
+                      <SwipeRow actions={[
+                        { label: 'Staple', className: 'bg-amber-500', icon: <Icon.Plus />, onClick: () => staple(it) },
+                        { label: 'Delete', className: 'bg-red-500', icon: <Icon.Trash />, onClick: () => actions.removeListItem(it.key) },
+                      ]}>
+                        <button className="flex w-full items-center gap-3 px-3 py-2.5 text-left" onClick={() => actions.toggleChecked(it.key)}>
+                          <span className="tick" data-checked={isChecked}>{isChecked && <Icon.Check />}</span>
+                          <span className={isChecked ? 'flex-1 text-ink-faint line-through' : 'flex-1'}>
+                            {it.name}
+                            {it.note && <span className="ml-1.5 text-xs text-ink-faint">— {it.note}</span>}
+                          </span>
+                        </button>
+                      </SwipeRow>
                     </li>
                   )
                 })}
@@ -101,10 +123,16 @@ export default function ListTab({ state, actions }) {
             <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">Added</h3>
             <ul className="card divide-y divide-line overflow-hidden">
               {[...list.manual].sort((a, b) => a.checked - b.checked).map((m) => (
-                <li key={m.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <button className="tick" data-checked={m.checked} onClick={() => actions.toggleManual(m.id)}>{m.checked && <Icon.Check />}</button>
-                  <span className={m.checked ? 'flex-1 text-ink-faint line-through' : 'flex-1'}>{m.name}</span>
-                  <button className="btn-ghost text-ink-faint !px-1.5" onClick={() => actions.removeManual(m.id)}><Icon.Close /></button>
+                <li key={m.id}>
+                  <SwipeRow actions={[
+                    { label: 'Delete', className: 'bg-red-500', icon: <Icon.Trash />, onClick: () => actions.removeManual(m.id) },
+                  ]}>
+                    <div className="flex items-center gap-3 px-3 py-2.5">
+                      <button className="tick" data-checked={m.checked} onClick={() => actions.toggleManual(m.id)}>{m.checked && <Icon.Check />}</button>
+                      <span className={m.checked ? 'flex-1 text-ink-faint line-through' : 'flex-1'}>{m.name}</span>
+                      <button className="btn-ghost text-ink-faint !px-1.5" onClick={() => actions.removeManual(m.id)}><Icon.Close /></button>
+                    </div>
+                  </SwipeRow>
                 </li>
               ))}
             </ul>
@@ -113,7 +141,7 @@ export default function ListTab({ state, actions }) {
       </div>
 
       <p className="mt-6 text-center text-xs text-ink-faint">
-        Only large quantities show a total — everything else is just "grab one."
+        Swipe an item left to delete it or make it a staple. Only large quantities show a total.
       </p>
 
       <Toast show={!!toast}>{toast}</Toast>
