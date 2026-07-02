@@ -69,7 +69,9 @@ export default function GearPopover({ open, onClose, state, actions, sync }) {
         {/* Sync */}
         <Section title="Device sync" desc="Optional. Sync via a private GitHub Gist (token needs 'gist' scope only).">
           <div className="flex items-center gap-2">
-            <span className={`chip ${STATUS_STYLE[sync.status] || STATUS_STYLE.idle}`}>{sync.message || sync.status}</span>
+            <span className={`chip ${STATUS_STYLE[sync.status] || STATUS_STYLE.idle}`}>
+              {sync.status === SyncStatus.ERROR ? 'Sync error' : (sync.message || sync.status)}
+            </span>
             <button className="btn-outline ml-auto" onClick={sync.syncNow}>Sync now</button>
           </div>
           {sync.status === SyncStatus.CONFLICT && (
@@ -81,17 +83,29 @@ export default function GearPopover({ open, onClose, state, actions, sync }) {
               </div>
             </div>
           )}
-          <label className="label">GitHub token (gist scope)</label>
+          {sync.status === SyncStatus.ERROR && sync.message && (
+            <p className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">{sync.message}</p>
+          )}
+          <label className="label">GitHub token (classic, gist scope)</label>
           <input className="input" type="password" placeholder="ghp_…" value={state.settings.gistToken}
-            onChange={(e) => actions.setSetting('gistToken', e.target.value.trim())} />
+            onChange={(e) => actions.setSetting('gistToken', e.target.value.replace(/\s+/g, ''))} />
           {state.settings.gistId && <p className="text-xs text-ink-faint">Gist ID: {state.settings.gistId}</p>}
         </Section>
 
         {/* AI */}
-        <Section title="AI recipe parsing" desc="Optional. Your Anthropic API key, stored only in this browser. Enables the 'AI Parse' button.">
-          <label className="label">Anthropic API key</label>
-          <input className="input" type="password" placeholder="sk-ant-…" value={state.settings.apiKey}
-            onChange={(e) => actions.setSetting('apiKey', e.target.value.trim())} />
+        <Section title="AI recipe parsing" desc="Off by default — the built-in parser is free and works offline. Turning this on adds an 'AI Parse' option that uses your own Anthropic API key (stored only in this browser).">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="h-4 w-4 accent-accent" checked={!!state.settings.aiEnabled}
+              onChange={(e) => actions.setSetting('aiEnabled', e.target.checked)} />
+            Enable AI parsing
+          </label>
+          {state.settings.aiEnabled && (
+            <>
+              <label className="label">Anthropic API key</label>
+              <input className="input" type="password" placeholder="sk-ant-…" value={state.settings.apiKey}
+                onChange={(e) => actions.setSetting('apiKey', e.target.value.replace(/\s+/g, ''))} />
+            </>
+          )}
         </Section>
 
         {/* Staples */}

@@ -46,6 +46,7 @@ export function makeDefaultState() {
     },
     staples: [...DEFAULT_STAPLES],
     settings: {
+      aiEnabled: false, // AI parsing is opt-in; the heuristic parser is the default
       apiKey: '',
       gistToken: '',
       gistId: '',

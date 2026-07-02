@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadState, saveState, importState as persistImport, nowISO } from './lib/storage.js'
 import { uid, weekLabel } from './lib/util.js'
-import { createGist, pushGist, pullGist, SyncStatus } from './lib/sync.js'
+import { createGist, pushGist, pullGist, findExistingGist, SyncStatus } from './lib/sync.js'
 
 // One hook owns the whole app state, persistence, and sync. Components get a
 // plain `state` object plus an `actions` bag of mutators.
@@ -21,6 +21,18 @@ export function useAppState() {
       return persisted
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Update settings without bumping lastModified or scheduling a sync push.
+  // Credentials (tokens, keys, toggles) must never trigger a push: typing a token
+  // character-by-character used to fire debounced pushes with a partial token (401s),
+  // and settings changes aren't content worth a sync conflict.
+  const setSettingsQuiet = useCallback((patch) => {
+    setState((prev) => {
+      const next = { ...prev, settings: { ...prev.settings, ...patch } }
+      saveState(next, { touch: false })
+      return next
+    })
   }, [])
 
   // ---- Sync -----------------------------------------------------------------
@@ -52,21 +64,25 @@ export function useAppState() {
   }, [])
 
   const syncNow = useCallback(async () => {
-    const current = state
-    const { gistToken, gistId } = current.settings
+    let current = state
+    const { gistToken } = current.settings
+    let { gistId } = current.settings
     if (!gistToken) { setSync({ status: SyncStatus.ERROR, message: 'No token configured' }); return }
     setSync({ status: SyncStatus.SYNCING, message: 'Syncing…' })
     try {
-      // No gist yet -> create one from local state.
+      // No gist id on this device -> look for an existing Meal Planner gist first
+      // (another device may have created it); only create a new one if none exists.
       if (!gistId) {
-        const newId = await createGist(gistToken, current)
-        mutate((d) => {
-          d.settings.gistId = newId
-          d.settings.lastSyncedAt = nowISO()
-          d.settings.lastSyncedModified = d.lastModified
-        })
-        setSync({ status: SyncStatus.SYNCED, message: 'Created gist & synced' })
-        return
+        const existing = await findExistingGist(gistToken)
+        if (!existing) {
+          const newId = await createGist(gistToken, current)
+          setSettingsQuiet({ gistId: newId, lastSyncedAt: nowISO(), lastSyncedModified: current.lastModified })
+          setSync({ status: SyncStatus.SYNCED, message: 'Created gist & synced' })
+          return
+        }
+        gistId = existing
+        setSettingsQuiet({ gistId })
+        current = { ...current, settings: { ...current.settings, gistId } }
       }
       const remote = await pullGist(gistToken, gistId)
       if (!remote) { await doPush(current); return }
@@ -231,7 +247,7 @@ export function useAppState() {
 
     // Settings
     setStaples: (staples) => mutate((d) => { d.staples = staples }),
-    setSetting: (key, value) => mutate((d) => { d.settings[key] = value }),
+    setSetting: (key, value) => setSettingsQuiet({ [key]: value }),
 
     // Backup
     importState: (obj) => { applyRemote(obj) },

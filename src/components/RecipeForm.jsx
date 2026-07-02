@@ -105,12 +105,10 @@ export default function RecipeForm({ recipe, categories, apiKey, onSave, onCance
         {parseErr && <p className="text-sm text-red-500">{parseErr}</p>}
         <div className="flex flex-wrap gap-2">
           <button className="btn-primary" onClick={doHeuristic} disabled={!raw.trim()}>Parse</button>
-          {apiKey ? (
+          {apiKey && (
             <button className="btn-outline" onClick={doAI} disabled={!raw.trim() || parsing}>
               <Icon.Spark /> {parsing ? 'AI parsing…' : 'AI Parse'}
             </button>
-          ) : (
-            <span className="self-center text-xs text-ink-faint">Add an API key in settings to enable AI parsing</span>
           )}
           <button className="btn-ghost ml-auto" onClick={onCancel}>Cancel</button>
         </div>

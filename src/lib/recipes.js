@@ -1,6 +1,7 @@
 // Shared recipe filtering/sorting used by the Recipes tab and the plan picker.
 
 export const SORTS = [
+  { id: 'recent', label: 'Recently added' },
   { id: 'az', label: 'A–Z' },
   { id: 'cooked', label: 'Most cooked' },
   { id: 'stale', label: "Haven't made in a while" },
@@ -16,8 +17,16 @@ export function filterRecipes(recipes, { category = 'All', query = '' } = {}) {
   })
 }
 
-export function sortRecipes(recipes, sort = 'az') {
+export function sortRecipes(recipes, sort = 'recent') {
   const arr = [...recipes]
+  if (sort === 'recent') {
+    // Newest first by date added.
+    return arr.sort((a, b) => {
+      const at = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const bt = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return bt - at || a.name.localeCompare(b.name)
+    })
+  }
   if (sort === 'az') return arr.sort((a, b) => a.name.localeCompare(b.name))
   if (sort === 'cooked') return arr.sort((a, b) => (b.timesCooked || 0) - (a.timesCooked || 0) || a.name.localeCompare(b.name))
   if (sort === 'stale') {

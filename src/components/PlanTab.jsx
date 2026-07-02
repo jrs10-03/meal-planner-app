@@ -44,9 +44,10 @@ export default function PlanTab({ state, actions }) {
         <div>
           <h2 className="text-xl font-semibold">{currentWeek ? currentWeek.label : 'This week'}</h2>
           {currentWeek && (
-            <p className="text-xs text-ink-faint">
-              {weekRangeLabel(currentWeek.startDate)} · {slots.length} meal{slots.length !== 1 ? 's' : ''} planned
-            </p>
+            <>
+              <p className="mt-0.5 text-lg font-medium text-ink-soft">{weekRangeLabel(currentWeek.startDate)}</p>
+              <p className="text-xs text-ink-faint">{slots.length} meal{slots.length !== 1 ? 's' : ''} planned</p>
+            </>
           )}
         </div>
         <button className="btn-outline" onClick={() => { setStartInput(toDateInputValue(new Date())); setNewWeekOpen(true) }}>
@@ -88,7 +89,7 @@ export default function PlanTab({ state, actions }) {
                 </div>
                 {/* Row 2: day + lunch/dinner + cooked */}
                 <div className="mt-2 flex items-center gap-2 pl-8">
-                  <select className="rounded-lg border border-line bg-surface px-1.5 py-1 text-xs text-ink-soft" value={s.day || ''} onChange={(e) => actions.setSlotDay(s.id, e.target.value)}>
+                  <select className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium text-ink" value={s.day || ''} onChange={(e) => actions.setSlotDay(s.id, e.target.value)}>
                     <option value="">Any day</option>
                     {s.day && !dayOpts.includes(s.day) && <option value={s.day}>{s.day}</option>}
                     {dayOpts.map((d) => <option key={d} value={d}>{d}</option>)}

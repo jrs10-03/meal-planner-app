@@ -16,7 +16,7 @@ export default function RecipesTab({ state, actions }) {
   const { recipes, categories } = state
   const [category, setCategory] = useState('All')
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState('az')
+  const [sort, setSort] = useState('recent') // auto: newest by date added; dropdown = manual override
   const [editing, setEditing] = useState(null) // recipe object or 'new'
   const [detail, setDetail] = useState(null) // recipe id
   const [manageCats, setManageCats] = useState(false)
@@ -92,7 +92,7 @@ export default function RecipesTab({ state, actions }) {
           <RecipeForm
             recipe={editing === 'new' ? null : editing}
             categories={categories}
-            apiKey={state.settings.apiKey}
+            apiKey={state.settings.aiEnabled ? state.settings.apiKey : ''}
             onSave={handleSave}
             onCancel={() => setEditing(null)}
           />
