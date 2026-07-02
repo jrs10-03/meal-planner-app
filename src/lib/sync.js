@@ -40,7 +40,7 @@ export async function createGist(token, state) {
     body: JSON.stringify({
       description: 'Meal Planner app data (do not edit by hand)',
       public: false,
-      files: { [GIST_FILENAME]: { content: JSON.stringify(state, null, 2) } },
+      files: { [GIST_FILENAME]: { content: JSON.stringify(sanitizeForSync(state), null, 2) } },
     }),
   })
   if (!res.ok) throw apiError(res, 'Create gist')
@@ -48,12 +48,19 @@ export async function createGist(token, state) {
   return data.id
 }
 
+// Settings are device-local: tokens/keys must never be synced. Pushing them broke
+// sync badly — a pull would overwrite the device's (valid) token with whatever stale
+// token was baked into the gist, causing unfixable 401s. It's also a secret in a gist.
+export function sanitizeForSync(state) {
+  return { ...state, settings: {} }
+}
+
 // Push local state to an existing gist (overwrite the file).
 export async function pushGist(token, gistId, state) {
   const res = await fetch(`${API}/${gistId}`, {
     method: 'PATCH',
     headers: { ...authHeaders(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(state, null, 2) } } }),
+    body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(sanitizeForSync(state), null, 2) } } }),
   })
   if (!res.ok) throw apiError(res, 'Push')
   return true

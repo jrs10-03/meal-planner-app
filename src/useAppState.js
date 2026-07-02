@@ -110,10 +110,19 @@ export function useAppState() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
-  const applyRemote = useCallback((remote) => {
-    const persisted = persistImport(remote)
-    setState({ ...persisted, settings: { ...persisted.settings, lastSyncedAt: nowISO(), lastSyncedModified: persisted.lastModified } })
-    saveState({ ...persisted, settings: { ...persisted.settings, lastSyncedModified: persisted.lastModified } }, { touch: false })
+  // keepLocalSettings (sync path): remote settings are ignored — credentials are
+  // device-local and a synced copy must never overwrite this device's token/key.
+  // Backup imports pass false so a restore can bring settings back if the file has them.
+  const applyRemote = useCallback((remote, { keepLocalSettings = true } = {}) => {
+    setState((prev) => {
+      const settings = keepLocalSettings
+        ? prev.settings
+        : { ...prev.settings, ...(remote.settings || {}) }
+      const persisted = persistImport({ ...remote, settings })
+      const next = { ...persisted, settings: { ...persisted.settings, lastSyncedAt: nowISO(), lastSyncedModified: persisted.lastModified } }
+      saveState(next, { touch: false })
+      return next
+    })
   }, [])
 
   const resolveConflict = useCallback((choice) => {
@@ -272,7 +281,7 @@ export function useAppState() {
     setSetting: (key, value) => setSettingsQuiet({ [key]: value }),
 
     // Backup
-    importState: (obj) => { applyRemote(obj) },
+    importState: (obj) => { applyRemote(obj, { keepLocalSettings: false }) },
   }
 
   return { state, actions, sync: { ...sync, syncNow, resolveConflict } }
