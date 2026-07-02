@@ -6,6 +6,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: './',
   plugins: [react()],
+  // Baked in at build time; shown in Settings so any device can verify its version.
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.{js,jsx}'],

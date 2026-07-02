@@ -124,6 +124,10 @@ export default function GearPopover({ open, onClose, state, actions, sync }) {
           </div>
           {importErr && <p className="text-sm text-red-500">{importErr}</p>}
         </Section>
+
+        <p className="border-t border-line pt-3 text-center text-xs text-ink-faint">
+          Build {new Date(__BUILD_TIME__).toLocaleString()}
+        </p>
       </div>
     </Modal>
   )
