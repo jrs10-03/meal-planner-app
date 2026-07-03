@@ -2,6 +2,7 @@
 // The entire app state is one JSON object so sync (Gist) can round-trip it wholesale.
 
 import { seedRecipes } from './seed.js'
+import { ensureCookLog } from './cooklog.js'
 
 export const STORAGE_KEY = 'mealplan:v1'
 export const SCHEMA_VERSION = 1
@@ -69,7 +70,10 @@ function migrate(state) {
   }
   // If versions still mismatch (unknown/older with no path), backfill missing keys.
   const def = makeDefaultState()
-  return { ...def, ...s, schemaVersion: SCHEMA_VERSION, list: { ...def.list, ...(s.list || {}) }, settings: { ...def.settings, ...(s.settings || {}) } }
+  const merged = { ...def, ...s, schemaVersion: SCHEMA_VERSION, list: { ...def.list, ...(s.list || {}) }, settings: { ...def.settings, ...(s.settings || {}) } }
+  // Backfill cook history on recipes saved before it existed.
+  merged.recipes = (merged.recipes || []).map((r) => ensureCookLog({ ...r }))
+  return merged
 }
 
 export function loadState() {

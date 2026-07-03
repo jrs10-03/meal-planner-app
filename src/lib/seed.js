@@ -1,5 +1,8 @@
 // Three example recipes so the app isn't empty on first run. Clearly deletable.
-import { uid } from './util.js'
+import { uid, toDateInputValue } from './util.js'
+
+// Local "YYYY-MM-DD" for N days ago, for seeding cook history.
+const daysAgoStr = (n) => toDateInputValue(new Date(Date.now() - n * 86400000))
 
 export function seedRecipes() {
   const t = new Date().toISOString()
@@ -27,6 +30,7 @@ export function seedRecipes() {
       timesCooked: 2,
       createdAt: t,
       lastCookedAt: new Date(Date.now() - 21 * 86400000).toISOString(),
+      cookLog: [daysAgoStr(21), daysAgoStr(40)],
       _seed: true,
     },
     {
@@ -51,6 +55,7 @@ export function seedRecipes() {
       timesCooked: 0,
       createdAt: t,
       lastCookedAt: null,
+      cookLog: [],
       _seed: true,
     },
     {
@@ -74,6 +79,7 @@ export function seedRecipes() {
       timesCooked: 1,
       createdAt: t,
       lastCookedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      cookLog: [daysAgoStr(5)],
       _seed: true,
     },
   ]

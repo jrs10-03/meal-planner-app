@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadState, saveState, importState as persistImport, nowISO } from './lib/storage.js'
-import { uid, weekLabel } from './lib/util.js'
+import { uid, weekLabel, todayStr } from './lib/util.js'
+import { addCookDay, removeCookDay } from './lib/cooklog.js'
 import { createGist, pushGist, pullGist, findExistingGist, SyncStatus } from './lib/sync.js'
 
 // One hook owns the whole app state, persistence, and sync. Components get a
@@ -153,7 +154,7 @@ export function useAppState() {
         d.recipes.push({
           id, name: '', category: d.categories[0] || 'Other', sourceUrl: null,
           ingredients: [], steps: [], servings: 2, timesCooked: 0,
-          createdAt: nowISO(), lastCookedAt: null, ...recipe,
+          createdAt: nowISO(), lastCookedAt: null, cookLog: [], ...recipe,
         })
       })
       return id
@@ -163,9 +164,19 @@ export function useAppState() {
       if (r) Object.assign(r, patch)
     }),
     deleteRecipe: (id) => mutate((d) => { d.recipes = d.recipes.filter((r) => r.id !== id) }),
+    // Log a cook for today (one per day per recipe; a second tap today is a no-op).
     markCooked: (id) => mutate((d) => {
       const r = d.recipes.find((x) => x.id === id)
-      if (r) { r.timesCooked = (r.timesCooked || 0) + 1; r.lastCookedAt = nowISO() }
+      if (r) addCookDay(r, todayStr())
+    }),
+    // Log/unlog a cook on a specific "YYYY-MM-DD" day (used by the history view).
+    logCooked: (id, dateStr) => mutate((d) => {
+      const r = d.recipes.find((x) => x.id === id)
+      if (r) addCookDay(r, dateStr)
+    }),
+    removeCookLog: (id, dateStr) => mutate((d) => {
+      const r = d.recipes.find((x) => x.id === id)
+      if (r) removeCookDay(r, dateStr)
     }),
 
     // Categories

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Icon } from './Icons.jsx'
 import { Modal, EmptyState, Chip, Toast } from './ui.jsx'
 import RecipePicker from './RecipePicker.jsx'
-import { parseDateInput, toDateInputValue, weekDayOptions, weekRangeLabel } from '../lib/util.js'
+import RecipeDetail from './RecipeDetail.jsx'
+import { parseDateInput, toDateInputValue, weekDayOptions, weekRangeLabel, todayStr } from '../lib/util.js'
 
 // Non-recipe slot kinds.
 const SPECIAL = {
@@ -17,11 +18,14 @@ export default function PlanTab({ state, actions }) {
   const [toast, setToast] = useState('')
   const [newWeekOpen, setNewWeekOpen] = useState(false)
   const [startInput, setStartInput] = useState(() => toDateInputValue(new Date()))
+  const [viewId, setViewId] = useState(null) // recipe id being viewed from the plan
+  const viewRecipe = recipes.find((x) => x.id === viewId)
 
   function cookedIt(recipeId) {
-    actions.markCooked(recipeId)
     const r = recipes.find((x) => x.id === recipeId)
-    setToast(`Cooked ${r ? r.name : 'it'} 🔥`)
+    const alreadyToday = r && (r.cookLog || []).includes(todayStr())
+    actions.markCooked(recipeId)
+    setToast(alreadyToday ? 'Already logged today' : `Cooked ${r ? r.name : 'it'} 🔥`)
     setTimeout(() => setToast(''), 1500)
   }
 
@@ -73,7 +77,18 @@ export default function PlanTab({ state, actions }) {
                     <button className="text-ink-faint hover:text-accent disabled:opacity-20" disabled={idx === slots.length - 1} onClick={() => actions.moveSlot(s.id, 1)}><Icon.Down /></button>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{name}</div>
+                    {r ? (
+                      <button
+                        className="flex w-full min-w-0 items-center gap-1 text-left hover:text-accent"
+                        onClick={() => setViewId(r.id)}
+                        title="View recipe"
+                      >
+                        <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
+                        <Icon.Chevron className="shrink-0 text-ink-faint" />
+                      </button>
+                    ) : (
+                      <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{name}</div>
+                    )}
                     {special ? (
                       <input
                         className="mt-0.5 w-full bg-transparent text-xs text-ink-soft outline-none placeholder:text-ink-faint"
@@ -178,6 +193,21 @@ export default function PlanTab({ state, actions }) {
             <button className="btn-ghost" onClick={() => setNewWeekOpen(false)}>Cancel</button>
           </div>
         </div>
+      </Modal>
+
+      {/* View a planned recipe, then return to the plan */}
+      <Modal open={!!viewRecipe} onClose={() => setViewId(null)} title={viewRecipe?.name || ''} wide>
+        {viewRecipe && (
+          <RecipeDetail
+            recipe={viewRecipe}
+            actions={actions}
+            footer={
+              <button className="btn-primary" onClick={() => setViewId(null)}>
+                <Icon.Up className="-rotate-90" /> Back to plan
+              </button>
+            }
+          />
+        )}
       </Modal>
 
       <Toast show={!!toast}>{toast}</Toast>

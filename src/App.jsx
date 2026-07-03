@@ -11,7 +11,7 @@ import { classNames } from './lib/util.js'
 
 const TABS = [
   { id: 'recipes', label: 'Recipes' },
-  { id: 'plan', label: 'Plan' },
+  { id: 'plan', label: 'Plan', icon: Icon.Calendar, prominent: true },
   { id: 'list', label: 'List' },
 ]
 
@@ -49,17 +49,26 @@ export default function App() {
             <button className="btn-ghost !px-2" onClick={() => setGearOpen(true)} aria-label="Settings"><Icon.Gear /></button>
           </div>
         </div>
-        {/* Tabs */}
-        <nav className="mx-auto flex max-w-3xl gap-1 px-4 pb-2">
-          {TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={classNames(
-                'flex-1 rounded-xl px-3 py-2 text-sm font-medium transition',
-                tab === t.id ? 'bg-accent text-white shadow-sm' : 'text-ink-soft hover:bg-black/[0.04]'
-              )}>
-              {t.label}
-            </button>
-          ))}
+        {/* Tabs — Plan is emphasized as the app's primary action. */}
+        <nav className="mx-auto flex max-w-3xl items-stretch gap-1 px-4 pb-2">
+          {TABS.map((t) => {
+            const active = tab === t.id
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={classNames(
+                  'flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm transition',
+                  t.prominent ? 'flex-[1.4] font-semibold' : 'flex-1 font-medium',
+                  active
+                    ? 'bg-accent text-white shadow-sm'
+                    : t.prominent
+                      ? 'bg-accent-soft text-accent-hover ring-1 ring-accent/25 hover:bg-accent-soft/70'
+                      : 'text-ink-soft hover:bg-black/[0.04]'
+                )}>
+                {t.icon && <t.icon />}
+                {t.label}
+              </button>
+            )
+          })}
         </nav>
       </header>
 

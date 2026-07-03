@@ -2,15 +2,10 @@ import { useMemo, useState } from 'react'
 import { Icon } from './Icons.jsx'
 import { Modal, ConfirmButton, EmptyState, Chip } from './ui.jsx'
 import RecipeForm from './RecipeForm.jsx'
+import RecipeDetail from './RecipeDetail.jsx'
 import CategoryManager from './CategoryManager.jsx'
 import { SORTS, filterRecipes, sortRecipes } from '../lib/recipes.js'
 import { relativeTime } from '../lib/util.js'
-
-function fmtQty(i) {
-  if (i.quantity == null) return ''
-  const q = Number.isInteger(i.quantity) ? i.quantity : Math.round(i.quantity * 100) / 100
-  return `${q}${i.unit ? ' ' + i.unit : ''} `
-}
 
 export default function RecipesTab({ state, actions }) {
   const { recipes, categories } = state
@@ -102,41 +97,18 @@ export default function RecipesTab({ state, actions }) {
       {/* Detail modal */}
       <Modal open={!!detailRecipe} onClose={() => setDetail(null)} title={detailRecipe?.name || ''} wide>
         {detailRecipe && (
-          <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="chip border-accent/20 bg-accent-soft text-accent-hover">{detailRecipe.category}</span>
-              <span className="text-xs text-ink-faint">Serves 2 · cooked ×{detailRecipe.timesCooked} · last made {relativeTime(detailRecipe.lastCookedAt)}</span>
-              {detailRecipe.sourceUrl && (
-                <a href={detailRecipe.sourceUrl} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-xs text-accent hover:underline">
-                  <Icon.External /> source
-                </a>
-              )}
-            </div>
-            <div>
-              <h4 className="mb-2 font-serif text-base font-semibold">Ingredients</h4>
-              <ul className="space-y-1 text-sm">
-                {detailRecipe.ingredients.map((i, idx) => (
-                  <li key={idx} className="flex gap-2"><span className="text-accent">•</span><span><span className="text-ink-soft">{fmtQty(i)}</span>{i.name}</span></li>
-                ))}
-              </ul>
-            </div>
-            {detailRecipe.steps.length > 0 && (
-              <div>
-                <h4 className="mb-2 font-serif text-base font-semibold">Steps</h4>
-                <ol className="space-y-2 text-sm">
-                  {detailRecipe.steps.map((s, idx) => (
-                    <li key={idx} className="flex gap-2"><span className="font-semibold text-accent">{idx + 1}.</span><span>{s}</span></li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            <div className="flex gap-2 border-t border-line pt-4">
-              <button className="btn-outline" onClick={() => { const r = detailRecipe; setDetail(null); setEditing(r) }}><Icon.Edit /> Edit</button>
-              <ConfirmButton className="btn-outline text-red-500" onConfirm={() => { actions.deleteRecipe(detailRecipe.id); setDetail(null) }}>
-                <Icon.Trash /> Delete
-              </ConfirmButton>
-            </div>
-          </div>
+          <RecipeDetail
+            recipe={detailRecipe}
+            actions={actions}
+            footer={
+              <>
+                <button className="btn-outline" onClick={() => { const r = detailRecipe; setDetail(null); setEditing(r) }}><Icon.Edit /> Edit</button>
+                <ConfirmButton className="btn-outline text-red-500" onConfirm={() => { actions.deleteRecipe(detailRecipe.id); setDetail(null) }}>
+                  <Icon.Trash /> Delete
+                </ConfirmButton>
+              </>
+            }
+          />
         )}
       </Modal>
 

@@ -10,6 +10,8 @@ export const Icon = {
   External: (p) => (<svg viewBox="0 0 24 24" width="14" height="14" {...base} {...p}><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5" /></svg>),
   Close: (p) => (<svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}><path d="M6 6l12 12M18 6 6 18" /></svg>),
   Up: (p) => (<svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><path d="m6 15 6-6 6 6" /></svg>),
+  Chevron: (p) => (<svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><path d="m9 6 6 6-6 6" /></svg>),
+  Calendar: (p) => (<svg viewBox="0 0 24 24" width="18" height="18" {...base} {...p}><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v3m8-3v3" /></svg>),
   Down: (p) => (<svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><path d="m6 9 6 6 6-6" /></svg>),
   Check: (p) => (<svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><path d="m5 12 5 5L20 6" /></svg>),
   Copy: (p) => (<svg viewBox="0 0 24 24" width="16" height="16" {...base} {...p}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h8" /></svg>),

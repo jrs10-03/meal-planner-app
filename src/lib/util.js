@@ -44,6 +44,21 @@ export function toDateInputValue(date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+// Today's local calendar date as a "YYYY-MM-DD" string.
+export function todayStr() {
+  return toDateInputValue(new Date())
+}
+
+// Friendly label for a "YYYY-MM-DD" date, e.g. "Thu, Jul 2" (year added only
+// when it differs from the current year).
+export function formatDayLabel(dateStr) {
+  const d = parseDateInput(dateStr)
+  if (Number.isNaN(d.getTime())) return dateStr
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' }
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric'
+  return d.toLocaleDateString('en-US', opts)
+}
+
 // The 7 day labels of a week starting at startISO, e.g. "Mon Jul 6".
 export function weekDayOptions(startISO) {
   const s = new Date(startISO)
