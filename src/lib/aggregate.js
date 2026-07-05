@@ -17,9 +17,76 @@ export const DEFAULT_THRESHOLDS = {
 // Show the total when an ingredient appears in this many recipes or more.
 export const RECIPE_COUNT_THRESHOLD = 3
 
-// Basic singular/plural normalization for merging "onion"/"onions".
+// Preparation words describe what you DO to an item, not what you buy.
+// Stripping them merges "onion, chopped" / "grated onion" / "onion" into one line.
+// Product-defining words (ground, smoked, dried, canned, frozen, red, baby…) stay.
+const PREP_WORDS = new Set([
+  'chopped', 'diced', 'minced', 'sliced', 'shredded', 'grated', 'crushed', 'cubed',
+  'julienned', 'torn', 'mashed', 'melted', 'softened', 'beaten', 'whisked', 'sifted',
+  'peeled', 'seeded', 'cored', 'trimmed', 'halved', 'quartered', 'divided', 'packed',
+  'rinsed', 'drained', 'washed', 'cooked', 'uncooked', 'raw', 'warmed', 'chilled',
+  'fresh', 'freshly', 'finely', 'roughly', 'coarsely', 'thinly', 'thickly', 'lightly',
+  'optional', 'large', 'medium', 'small', 'ripe', 'boneless', 'skinless', 'bone-in',
+  'skin-on', 'lean', 'extra-lean', 'toasted',
+])
+
+// Named cheeses whose trailing "cheese" is redundant ("cheddar cheese" =
+// "cheddar"). A whitelist so "cream cheese"/"cottage cheese" stay intact.
+const CHEESES = new Set([
+  'cheddar', 'parmesan', 'mozzarella', 'swiss', 'feta', 'gouda', 'provolone',
+  'gruyere', 'asiago', 'romano', 'colby', 'monterey', 'jack', 'pepperjack',
+])
+
+// Quantity-ish nouns that pair with a product ("garlic cloves", "bunch cilantro");
+// dropped when other words remain so the product word carries the line.
+const CONTAINER_WORDS = new Set([
+  'clove', 'cloves', 'stalk', 'stalks', 'sprig', 'sprigs', 'head', 'heads',
+  'ear', 'ears', 'bunch', 'bunches', 'knob', 'knobs',
+])
+
+// Cuts/forms that reduce to the base protein: "chicken breasts" and
+// "shredded chicken" are the same shopping line ("chicken").
+const PROTEINS = new Set(['chicken', 'beef', 'pork', 'turkey', 'salmon', 'lamb'])
+const CUT_WORDS = new Set([
+  'breast', 'breasts', 'thigh', 'thighs', 'drumstick', 'drumsticks', 'tender',
+  'tenders', 'tenderloin', 'tenderloins', 'cutlet', 'cutlets', 'wing', 'wings',
+  'leg', 'legs', 'fillet', 'fillets', 'filet', 'filets', 'chop', 'chops',
+  'strip', 'strips', 'chunk', 'chunks', 'piece', 'pieces',
+])
+
+// Reduce an ingredient name to the product you'd actually buy: drop
+// parentheticals, trailing instructions, prep words (wherever they appear —
+// "boneless, skinless chicken breasts, cut into pieces" puts them everywhere),
+// protein cuts, and container nouns. Falls back to the plain name if
+// stripping empties it.
+const DANGLING = new Set(['or', 'and', 'of', 'with'])
+
+export function cleanName(name) {
+  let n = String(name || '').toLowerCase().trim()
+  n = n.replace(/\([^)]*\)/g, ' ') // "(about 2 cups)"
+  n = n.replace(/\s[—–].*$/, ' ') // em-dash asides: "monterey jack — or mexican blend"
+  n = n.replace(/\b(cut into|for serving|to taste|plus more|at room temperature|to serve|to garnish|for garnish)\b.*$/, ' ')
+  n = n.replace(/,/g, ' ')
+  let words = n.split(/\s+/).filter(Boolean).filter((w) => !PREP_WORDS.has(w))
+  if (words.some((w) => PROTEINS.has(w))) {
+    words = words.filter((w) => !CUT_WORDS.has(w))
+  }
+  if (words.length > 1) {
+    const rest = words.filter((w) => !CONTAINER_WORDS.has(w))
+    if (rest.length) words = rest
+  }
+  while (words.length && DANGLING.has(words[0])) words.shift()
+  while (words.length && DANGLING.has(words[words.length - 1])) words.pop()
+  if (words.length > 1 && words[words.length - 1] === 'cheese' && CHEESES.has(words[words.length - 2])) {
+    words.pop()
+  }
+  const out = words.join(' ').trim()
+  return out || String(name || '').toLowerCase().trim().replace(/\s+/g, ' ')
+}
+
+// Merge key: cleaned name plus singular/plural normalization ("onion"/"onions").
 export function normalizeName(name) {
-  let n = String(name || '').toLowerCase().trim().replace(/\s+/g, ' ')
+  let n = cleanName(name)
   if (n.length > 3) {
     if (/( churches|dishes|tomatoes|potatoes)$/.test(n)) n = n.replace(/es$/, '')
     else if (/[^aeiou]ies$/.test(n)) n = n.replace(/ies$/, 'y')
@@ -76,7 +143,8 @@ export function buildShoppingList(recipes, staples = [], thresholds = DEFAULT_TH
       if (isStaple(ing.name, staples)) continue
       const key = normalizeName(ing.name)
       if (!groups.has(key)) {
-        groups.set(key, { name: ing.name.trim(), recipeIds: new Set(), byUnit: new Map(), hadQty: false })
+        // Display the cleaned name ("onion", not "onion, chopped").
+        groups.set(key, { name: cleanName(ing.name), recipeIds: new Set(), byUnit: new Map(), hadQty: false })
       }
       const g = groups.get(key)
       g.recipeIds.add(r.id)

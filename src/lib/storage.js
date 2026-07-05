@@ -48,6 +48,7 @@ export function makeDefaultState() {
     },
     staples: [...DEFAULT_STAPLES],
     settings: {
+      theme: 'system', // 'system' | 'light' | 'dark' — device-local, never synced
       aiEnabled: false, // AI parsing is opt-in; the heuristic parser is the default
       apiKey: '',
       gistToken: '',

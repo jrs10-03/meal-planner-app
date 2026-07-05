@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addCookDay, removeCookDay, ensureCookLog } from './cooklog.js'
+import { addCookDay, removeCookDay, ensureCookLog, syncCookedFields } from './cooklog.js'
 
 describe('cooklog', () => {
   it('adds a cooked day and derives counters', () => {
@@ -26,8 +26,9 @@ describe('cooklog', () => {
     expect(r.cookLog).toEqual(['2026-07-05', '2026-07-03', '2026-07-01'])
   })
 
-  it('removes a day, decrements the count and recomputes lastCookedAt', () => {
-    const r = { cookLog: ['2026-07-05', '2026-07-01'], timesCooked: 2 }
+  it('removes a day and recomputes count and lastCookedAt', () => {
+    const r = { cookLog: ['2026-07-05', '2026-07-01'] }
+    syncCookedFields(r)
     removeCookDay(r, '2026-07-05')
     expect(r.cookLog).toEqual(['2026-07-01'])
     expect(r.timesCooked).toBe(1)
@@ -43,16 +44,12 @@ describe('cooklog', () => {
     expect(r.timesCooked).toBe(1)
   })
 
-  it('preserves a legacy count larger than the known log', () => {
-    // Cooked 3 times historically, but only the last date is known.
+  it('derives the count from history even when a legacy count disagrees', () => {
+    // v1 preserved inflated legacy counts; v2 derives — ×3 with one dated entry becomes ×1.
     const r = { timesCooked: 3, lastCookedAt: '2026-06-20T12:00:00.000Z' }
     ensureCookLog(r)
     expect(r.cookLog).toEqual(['2026-06-20'])
-    expect(r.timesCooked).toBe(3) // count is not shrunk to the log length
-    // Removing the one known date decrements but keeps the historical remainder.
-    removeCookDay(r, '2026-06-20')
-    expect(r.cookLog).toEqual([])
-    expect(r.timesCooked).toBe(2)
+    expect(r.timesCooked).toBe(1)
   })
 
   it('de-duplicates a legacy log', () => {

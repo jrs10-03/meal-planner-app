@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppState } from './useAppState.js'
 import { useKeyboardInset } from './components/ui.jsx'
 import { Icon } from './components/Icons.jsx'
@@ -27,9 +27,24 @@ const DOT = {
 export default function App() {
   const { state, actions, sync } = useAppState()
   useKeyboardInset()
-  const [tab, setTab] = useState('recipes')
+  const [tab, setTab] = useState('plan')
   const [gearOpen, setGearOpen] = useState(false)
   const syncConfigured = !!state.settings.gistToken
+  const theme = state.settings.theme || 'system'
+
+  // Apply light/dark by toggling the .dark class; 'system' tracks the OS
+  // preference live. The theme-color meta keeps the iOS status bar matching.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'system' && mq.matches)
+      document.documentElement.classList.toggle('dark', dark)
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#201D1A' : '#FAF9F5')
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [theme])
 
   return (
     <div className="min-h-[100dvh]">
@@ -62,7 +77,7 @@ export default function App() {
                     ? 'bg-accent text-white shadow-sm'
                     : t.prominent
                       ? 'bg-accent-soft text-accent-hover ring-1 ring-accent/25 hover:bg-accent-soft/70'
-                      : 'text-ink-soft hover:bg-black/[0.04]'
+                      : 'text-ink-soft hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
                 )}>
                 {t.icon && <t.icon />}
                 {t.label}

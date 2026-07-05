@@ -243,6 +243,20 @@ export function useAppState() {
       if (i < 0 || j < 0 || j >= arr.length) return
       ;[arr[i], arr[j]] = [arr[j], arr[i]]
     }),
+    // Swap two slots by id — used by the day-grouped plan view, where "up/down"
+    // means the neighbor within the same day group, not the flat array neighbor.
+    swapSlots: (idA, idB) => mutate((d) => {
+      if (!d.currentWeek) return
+      const arr = d.currentWeek.slots
+      const i = arr.findIndex((s) => s.id === idA)
+      const j = arr.findIndex((s) => s.id === idB)
+      if (i < 0 || j < 0) return
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+    }),
+    // Delete a past week from history (the current week is replaced via startNewWeek).
+    deleteWeek: (weekId) => mutate((d) => {
+      d.weekHistory = d.weekHistory.filter((w) => w.id !== weekId)
+    }),
     toggleSlotType: (slotId) => mutate((d) => {
       const s = d.currentWeek?.slots.find((x) => x.id === slotId)
       if (s) s.type = s.type === 'dinner' ? 'lunch' : 'dinner'

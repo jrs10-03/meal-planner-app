@@ -1,22 +1,25 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
+      // All colors resolve through CSS variables (RGB triplets set in
+      // index.css) so the .dark class can swap the whole palette at once.
       colors: {
-        cream: '#FAF9F5',
-        surface: '#FFFFFF',
+        cream: 'rgb(var(--c-cream) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
         accent: {
-          DEFAULT: '#DA7756',
-          hover: '#C86544',
-          soft: '#F5E4DC',
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          hover: 'rgb(var(--c-accent-hover) / <alpha-value>)',
+          soft: 'rgb(var(--c-accent-soft) / <alpha-value>)',
         },
         ink: {
-          DEFAULT: '#2B2622',
-          soft: '#6B6259',
-          faint: '#9A9187',
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',
+          soft: 'rgb(var(--c-ink-soft) / <alpha-value>)',
+          faint: 'rgb(var(--c-ink-faint) / <alpha-value>)',
         },
-        line: '#EAE6DE',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
       },
       fontFamily: {
         serif: ['"Iowan Old Style"', 'Palatino', 'Georgia', 'serif'],

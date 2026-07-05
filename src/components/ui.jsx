@@ -34,7 +34,7 @@ export function Modal({ open, onClose, title, children, wide = false }) {
   if (!open) return null
   return (
     <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] dark:bg-black/50" onClick={onClose} />
       <div
         style={{ maxHeight: 'calc(92vh - var(--kb, 0px))', transform: 'translateY(calc(-1 * var(--kb, 0px)))' }}
         className={classNames(
@@ -79,7 +79,7 @@ export function ConfirmButton({ onConfirm, label = 'Delete', confirmLabel = 'Con
 export function Chip({ active, onClick, color = 'accent', children }) {
   const palette = {
     accent: active ? 'bg-accent text-white border-accent' : 'bg-surface border-line text-ink-soft hover:border-accent/40',
-    lunch: active ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 border-amber-200 text-amber-700',
+    lunch: active ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-300',
   }
   return (
     <button type="button" className={classNames('chip', palette[color])} onClick={onClick}>
@@ -169,7 +169,7 @@ export function SwipeRow({ actions = [], children }) {
 export function Toast({ show, children }) {
   return (
     <div className={classNames(
-      'pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-white shadow-pop transition',
+      'pointer-events-none fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-sm text-cream shadow-pop transition',
       show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
     )}>
       {children}

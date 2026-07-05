@@ -3,6 +3,32 @@
 @tailwind utilities;
 
 @layer base {
+  /* Palette as RGB triplets so Tailwind can apply alpha. Light is the default;
+     the .dark class (set on <html> by the theme setting) swaps the whole set. */
+  :root {
+    color-scheme: light;
+    --c-cream: 250 249 245;
+    --c-surface: 255 255 255;
+    --c-accent: 218 119 86;
+    --c-accent-hover: 200 101 68;
+    --c-accent-soft: 245 228 220;
+    --c-ink: 43 38 34;
+    --c-ink-soft: 107 98 89;
+    --c-ink-faint: 154 145 135;
+    --c-line: 234 230 222;
+  }
+  .dark {
+    color-scheme: dark;
+    --c-cream: 32 29 26;
+    --c-surface: 42 39 36;
+    --c-accent: 218 119 86;
+    --c-accent-hover: 226 139 109;
+    --c-accent-soft: 74 51 42;
+    --c-ink: 237 232 226;
+    --c-ink-soft: 179 171 161;
+    --c-ink-faint: 133 125 115;
+    --c-line: 58 54 47;
+  }
   html {
     -webkit-text-size-adjust: 100%;
   }
@@ -28,7 +54,7 @@
     @apply btn bg-accent text-white shadow-sm hover:bg-accent-hover;
   }
   .btn-ghost {
-    @apply btn text-ink-soft hover:bg-black/[0.04];
+    @apply btn text-ink-soft hover:bg-black/[0.04] dark:hover:bg-white/[0.06];
   }
   .btn-outline {
     @apply btn border border-line bg-surface text-ink hover:border-accent/40;

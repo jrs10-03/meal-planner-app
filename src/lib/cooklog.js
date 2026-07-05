@@ -1,9 +1,8 @@
 // Cook history lives on each recipe as `cookLog`: an array of local calendar
-// dates ("YYYY-MM-DD"), newest first, at most one entry per day. `lastCookedAt`
-// is derived from the log; `timesCooked` is the running count. For recipes that
-// predate this feature we only know their last-cooked date, so the count is
-// PRESERVED rather than recomputed from the (partial) log — we never silently
-// shrink a user's existing "cooked ×N".
+// dates ("YYYY-MM-DD"), newest first, at most one entry per day. `timesCooked`
+// and `lastCookedAt` are DERIVED from the log — the count always equals the
+// number of dated entries shown in history (v2.0 behavior; v1 preserved legacy
+// counts, which let counts drift from the visible history).
 
 import { parseDateInput, toDateInputValue } from './util.js'
 
@@ -20,45 +19,40 @@ export function dateStrToISO(dateStr) {
   return parseDateInput(dateStr).toISOString()
 }
 
-// De-dupe + sort newest-first.
-function cleanLog(log) {
+// Recompute the derived fields from the log, keeping it sorted + de-duped.
+export function syncCookedFields(recipe) {
   const seen = new Set()
-  return (log || [])
+  const log = (recipe.cookLog || [])
     .filter((d) => d && !seen.has(d) && seen.add(d))
-    .sort((a, b) => b.localeCompare(a))
+    .sort((a, b) => b.localeCompare(a)) // newest first
+  recipe.cookLog = log
+  recipe.timesCooked = log.length
+  recipe.lastCookedAt = log.length ? dateStrToISO(log[0]) : null
+  return recipe
 }
 
-// Backfill/normalize a recipe's cook history. Seeds a single dated entry from
-// the legacy lastCookedAt when no log exists, and keeps the count consistent
-// (never fewer than the dated events we can actually show).
+// Backfill cookLog for recipes created before this feature existed, seeding a
+// single entry from the old lastCookedAt so history isn't blank for them.
 export function ensureCookLog(recipe) {
   if (!Array.isArray(recipe.cookLog)) {
     const seed = isoToDateStr(recipe.lastCookedAt)
     recipe.cookLog = seed ? [seed] : []
   }
-  recipe.cookLog = cleanLog(recipe.cookLog)
-  if (typeof recipe.timesCooked !== 'number' || recipe.timesCooked < recipe.cookLog.length) {
-    recipe.timesCooked = recipe.cookLog.length
-  }
-  return recipe
+  return syncCookedFields(recipe)
 }
 
 // Add one cooked day. Returns false if that day is already logged (one/day rule).
 export function addCookDay(recipe, dateStr) {
   ensureCookLog(recipe)
   if (recipe.cookLog.includes(dateStr)) return false
-  recipe.cookLog = cleanLog([...recipe.cookLog, dateStr])
-  recipe.timesCooked = (recipe.timesCooked || 0) + 1
-  recipe.lastCookedAt = dateStrToISO(recipe.cookLog[0])
+  recipe.cookLog.push(dateStr)
+  syncCookedFields(recipe)
   return true
 }
 
-// Remove a logged day. No-op if it wasn't logged. Keeps count >= remaining log.
+// Remove a logged day. No-op if it wasn't logged.
 export function removeCookDay(recipe, dateStr) {
   ensureCookLog(recipe)
-  if (!recipe.cookLog.includes(dateStr)) return recipe
   recipe.cookLog = recipe.cookLog.filter((d) => d !== dateStr)
-  recipe.timesCooked = Math.max(recipe.cookLog.length, (recipe.timesCooked || 1) - 1)
-  recipe.lastCookedAt = recipe.cookLog.length ? dateStrToISO(recipe.cookLog[0]) : null
-  return recipe
+  return syncCookedFields(recipe)
 }

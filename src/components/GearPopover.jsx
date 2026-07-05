@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Icon } from './Icons.jsx'
-import { Modal } from './ui.jsx'
+import { Modal, Chip } from './ui.jsx'
 import { exportState } from '../lib/storage.js'
 import { SyncStatus } from '../lib/sync.js'
 
@@ -66,6 +66,17 @@ export default function GearPopover({ open, onClose, state, actions, sync }) {
   return (
     <Modal open={open} onClose={onClose} title="Settings">
       <div className="space-y-6">
+        {/* Appearance */}
+        <Section title="Appearance" desc="System follows your device's light/dark setting.">
+          <div className="flex gap-1.5">
+            {['system', 'light', 'dark'].map((t) => (
+              <Chip key={t} active={(state.settings.theme || 'system') === t} onClick={() => actions.setSetting('theme', t)}>
+                {t === 'system' ? 'System' : t === 'light' ? '☀️ Light' : '🌙 Dark'}
+              </Chip>
+            ))}
+          </div>
+        </Section>
+
         {/* Sync */}
         <Section title="Device sync" desc="Optional. Sync via a private GitHub Gist (token needs 'gist' scope only).">
           <div className="flex items-center gap-2">
@@ -126,7 +137,7 @@ export default function GearPopover({ open, onClose, state, actions, sync }) {
         </Section>
 
         <p className="border-t border-line pt-3 text-center text-xs text-ink-faint">
-          Build {new Date(__BUILD_TIME__).toLocaleString()}
+          v{__APP_VERSION__} · Build {new Date(__BUILD_TIME__).toLocaleString()}
         </p>
       </div>
     </Modal>
