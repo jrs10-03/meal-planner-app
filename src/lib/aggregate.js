@@ -114,9 +114,29 @@ export function sectionFor(name) {
   return 'Other'
 }
 
+// Grade/finish qualifiers that don't change what product a staple is:
+// "kosher salt" is still the "salt" staple, "extra-virgin olive oil" is still
+// "olive oil". Anything else ("bell pepper", "sesame oil") is a different
+// product and must NOT be swallowed by a staple. (The old substring match
+// silently dropped bell peppers because of the "pepper" staple.)
+const GRADE_WORDS = new Set([
+  'kosher', 'sea', 'table', 'coarse', 'fine', 'ground', 'cracked', 'black',
+  'white', 'iodized', 'granulated', 'powdered', 'light', 'dark', 'low-sodium',
+  'reduced-sodium', 'extra-virgin', 'virgin', 'neutral', 'unsalted', 'salted',
+])
+
 function isStaple(name, staples) {
   const n = normalizeName(name)
-  return staples.some((s) => normalizeName(s) === n || n.includes(normalizeName(s)))
+  const nWords = n.split(' ')
+  return staples.some((s) => {
+    const st = normalizeName(s)
+    if (st === n) return true
+    if (n.endsWith(' ' + st)) {
+      const extra = nWords.slice(0, nWords.length - st.split(' ').length)
+      return extra.every((w) => GRADE_WORDS.has(w))
+    }
+    return false
+  })
 }
 
 function formatNum(v) {

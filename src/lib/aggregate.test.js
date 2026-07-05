@@ -111,6 +111,22 @@ describe('buildShoppingList quantity rule', () => {
     expect(names).not.toContain('salt')
     expect(names).toContain('flour')
   })
+
+  it('matches graded variants of a staple but not different products', () => {
+    const recipes = [R('a', [
+      { name: 'kosher salt', quantity: 1, unit: 'tsp' },
+      { name: 'freshly ground black pepper', quantity: 1, unit: 'tsp' },
+      { name: 'red bell pepper, seeded and chopped', quantity: 1, unit: null },
+      { name: 'sesame oil', quantity: 1, unit: 'tbsp' },
+      { name: 'extra-virgin olive oil', quantity: 1, unit: 'tbsp' },
+    ])]
+    const names = buildShoppingList(recipes, ['salt', 'pepper', 'oil', 'olive oil']).flatMap((g) => g.items).map((i) => i.name)
+    expect(names).not.toContain('kosher salt') // grade of the salt staple
+    expect(names).not.toContain('ground black pepper') // grade of the pepper staple
+    expect(names).toContain('red bell pepper') // different product than "pepper"
+    expect(names).toContain('sesame oil') // different product than "oil"
+    expect(names).not.toContain('extra-virgin olive oil') // grade of olive oil
+  })
 })
 
 describe('sectionFor', () => {
