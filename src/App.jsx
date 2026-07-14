@@ -49,7 +49,7 @@ export default function App() {
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-line bg-cream/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-cream/90 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-white">
             <Icon.Fire />

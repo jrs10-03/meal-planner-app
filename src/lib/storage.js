@@ -49,6 +49,7 @@ export function makeDefaultState() {
     staples: [...DEFAULT_STAPLES],
     settings: {
       theme: 'system', // 'system' | 'light' | 'dark' — device-local, never synced
+      listSort: 'category', // shopping list arrangement: 'category' | 'az' | 'meal'
       aiEnabled: false, // AI parsing is opt-in; the heuristic parser is the default
       apiKey: '',
       gistToken: '',

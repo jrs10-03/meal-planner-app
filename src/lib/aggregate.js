@@ -204,7 +204,7 @@ export function buildShoppingList(recipes, staples = [], thresholds = DEFAULT_TH
       note = `in ${recipeCount} recipes`
     }
 
-    items.push({ key, name: g.name, note: showQty ? note : '', recipeCount, section: sectionFor(g.name) })
+    items.push({ key, name: g.name, note: showQty ? note : '', recipeCount, recipeIds: [...g.recipeIds], section: sectionFor(g.name) })
   }
 
   // Group by section, preserving a friendly section order.

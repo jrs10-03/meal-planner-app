@@ -31,6 +31,8 @@
   }
   html {
     -webkit-text-size-adjust: 100%;
+    /* Theme the overscroll + under-status-bar area (black-translucent PWA). */
+    @apply bg-cream;
   }
   body {
     @apply bg-cream text-ink font-sans antialiased;

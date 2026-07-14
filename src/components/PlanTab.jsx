@@ -60,6 +60,91 @@ function DayHeading({ day, isToday }) {
   )
 }
 
+// Recipe slot card (current week only — past weeks render read-only rows).
+// Defined at module scope: defining it inside PlanTab recreated the component
+// type on every keystroke, remounting the note input and closing the keyboard.
+function SlotCard({ s, group, posInGroup, recipes, dayOpts, actions, onView, onCooked }) {
+  const special = SPECIAL[s.kind]
+  const r = special ? null : recipes.find((x) => x.id === s.recipeId)
+  const name = special ? special.name : r ? r.name : s.recipeName + ' (deleted)'
+  const prev = group.slots[posInGroup - 1]
+  const next = group.slots[posInGroup + 1]
+  return (
+    <li className={special ? 'card border-dashed p-3' : 'card p-3'}>
+      {/* Row 1: reorder-within-day + name + remove */}
+      <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-0.5">
+          <button className="text-ink-faint hover:text-accent disabled:opacity-20" disabled={!prev} onClick={() => prev && actions.swapSlots(s.id, prev.id)}><Icon.Up /></button>
+          <button className="text-ink-faint hover:text-accent disabled:opacity-20" disabled={!next} onClick={() => next && actions.swapSlots(s.id, next.id)}><Icon.Down /></button>
+        </div>
+        <div className="min-w-0 flex-1">
+          {r ? (
+            <button
+              className="flex max-w-full items-center gap-1 truncate text-left font-medium hover:text-accent"
+              onClick={() => onView(r.id)}
+              title="View recipe"
+            >
+              <span className="truncate">{name}</span>
+              <Icon.Chevron className="shrink-0 text-ink-faint" />
+            </button>
+          ) : (
+            <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{name}</div>
+          )}
+          {special ? (
+            <input
+              className="mt-0.5 w-full bg-transparent text-xs text-ink-soft outline-none placeholder:text-ink-faint"
+              value={s.note || ''}
+              placeholder={special.notePlaceholder}
+              onChange={(e) => actions.setSlotNote(s.id, e.target.value)}
+            />
+          ) : (
+            r && r.timesCooked > 0 && <div className="text-xs text-ink-faint">cooked ×{r.timesCooked}</div>
+          )}
+        </div>
+        <button className="btn-ghost text-ink-faint !px-1.5" onClick={() => actions.removeSlot(s.id)} aria-label="Remove"><Icon.Close /></button>
+      </div>
+      {/* Row 2: day + lunch/dinner + cooked */}
+      <div className="mt-2 flex items-center gap-2 pl-8">
+        <select className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium text-ink" value={s.day || ''} onChange={(e) => actions.setSlotDay(s.id, e.target.value)}>
+          <option value="">Any day</option>
+          {s.day && !dayOpts.includes(s.day) && <option value={s.day}>{s.day}</option>}
+          {dayOpts.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <Chip color="lunch" active={s.type === 'lunch'} onClick={() => actions.toggleSlotType(s.id)}>
+          {s.type === 'lunch' ? 'Lunch' : 'Dinner'}
+        </Chip>
+        {r && (
+          <button className="btn-outline ml-auto !px-2.5 !py-1.5 text-xs" onClick={() => onCooked(r.id)}><Icon.Fire /> Cooked</button>
+        )}
+      </div>
+    </li>
+  )
+}
+
+// Read-only row for a past week's slot; recipe names still open the recipe.
+function PastSlotRow({ s, recipes, onView }) {
+  const special = SPECIAL[s.kind]
+  const r = special ? null : recipes.find((x) => x.id === s.recipeId)
+  return (
+    <li className={special ? 'card border-dashed p-3' : 'card p-3'}>
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          {r ? (
+            <button className="flex max-w-full items-center gap-1 truncate text-left font-medium hover:text-accent" onClick={() => onView(r.id)} title="View recipe">
+              <span className="truncate">{s.recipeName}</span>
+              <Icon.Chevron className="shrink-0 text-ink-faint" />
+            </button>
+          ) : (
+            <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{s.recipeName}</div>
+          )}
+          {s.note && <div className="text-xs text-ink-faint">{s.note}</div>}
+        </div>
+        <Chip color="lunch" active={s.type === 'lunch'}>{s.type === 'lunch' ? 'Lunch' : 'Dinner'}</Chip>
+      </div>
+    </li>
+  )
+}
+
 export default function PlanTab({ state, actions }) {
   const { currentWeek, weekHistory, recipes } = state
   const [picking, setPicking] = useState(false)
@@ -76,6 +161,7 @@ export default function PlanTab({ state, actions }) {
   const week = viewingPast ? pastWeek : currentWeek
   const slots = week?.slots || []
   const groups = week ? groupSlots(slots, week.startDate) : []
+  const dayOpts = currentWeek ? weekDayOptions(currentWeek.startDate) : []
   const todayLabel = weekDayOptions(new Date().toISOString())[0]
 
   function cookedIt(recipeId) {
@@ -100,90 +186,6 @@ export default function PlanTab({ state, actions }) {
   function deletePastWeek() {
     actions.deleteWeek(pastWeek.id)
     setViewIdx((i) => Math.min(i, weekHistory.length - 1))
-  }
-
-  // Recipe slot card (current week only — past weeks render read-only rows).
-  function SlotCard({ s, group, posInGroup }) {
-    const special = SPECIAL[s.kind]
-    const r = special ? null : recipes.find((x) => x.id === s.recipeId)
-    const name = special ? special.name : r ? r.name : s.recipeName + ' (deleted)'
-    const dayOpts = currentWeek ? weekDayOptions(currentWeek.startDate) : []
-    const prev = group.slots[posInGroup - 1]
-    const next = group.slots[posInGroup + 1]
-    return (
-      <li className={special ? 'card border-dashed p-3' : 'card p-3'}>
-        {/* Row 1: reorder-within-day + name + remove */}
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col gap-0.5">
-            <button className="text-ink-faint hover:text-accent disabled:opacity-20" disabled={!prev} onClick={() => prev && actions.swapSlots(s.id, prev.id)}><Icon.Up /></button>
-            <button className="text-ink-faint hover:text-accent disabled:opacity-20" disabled={!next} onClick={() => next && actions.swapSlots(s.id, next.id)}><Icon.Down /></button>
-          </div>
-          <div className="min-w-0 flex-1">
-            {r ? (
-              <button
-                className="flex max-w-full items-center gap-1 truncate text-left font-medium hover:text-accent"
-                onClick={() => setViewId(r.id)}
-                title="View recipe"
-              >
-                <span className="truncate">{name}</span>
-                <Icon.Chevron className="shrink-0 text-ink-faint" />
-              </button>
-            ) : (
-              <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{name}</div>
-            )}
-            {special ? (
-              <input
-                className="mt-0.5 w-full bg-transparent text-xs text-ink-soft outline-none placeholder:text-ink-faint"
-                value={s.note || ''}
-                placeholder={special.notePlaceholder}
-                onChange={(e) => actions.setSlotNote(s.id, e.target.value)}
-              />
-            ) : (
-              r && r.timesCooked > 0 && <div className="text-xs text-ink-faint">cooked ×{r.timesCooked}</div>
-            )}
-          </div>
-          <button className="btn-ghost text-ink-faint !px-1.5" onClick={() => actions.removeSlot(s.id)} aria-label="Remove"><Icon.Close /></button>
-        </div>
-        {/* Row 2: day + lunch/dinner + cooked */}
-        <div className="mt-2 flex items-center gap-2 pl-8">
-          <select className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium text-ink" value={s.day || ''} onChange={(e) => actions.setSlotDay(s.id, e.target.value)}>
-            <option value="">Any day</option>
-            {s.day && !dayOpts.includes(s.day) && <option value={s.day}>{s.day}</option>}
-            {dayOpts.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <Chip color="lunch" active={s.type === 'lunch'} onClick={() => actions.toggleSlotType(s.id)}>
-            {s.type === 'lunch' ? 'Lunch' : 'Dinner'}
-          </Chip>
-          {r && (
-            <button className="btn-outline ml-auto !px-2.5 !py-1.5 text-xs" onClick={() => cookedIt(r.id)}><Icon.Fire /> Cooked</button>
-          )}
-        </div>
-      </li>
-    )
-  }
-
-  // Read-only row for a past week's slot; recipe names still open the recipe.
-  function PastSlotRow({ s }) {
-    const special = SPECIAL[s.kind]
-    const r = special ? null : recipes.find((x) => x.id === s.recipeId)
-    return (
-      <li className={special ? 'card border-dashed p-3' : 'card p-3'}>
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            {r ? (
-              <button className="flex max-w-full items-center gap-1 truncate text-left font-medium hover:text-accent" onClick={() => setViewId(r.id)} title="View recipe">
-                <span className="truncate">{s.recipeName}</span>
-                <Icon.Chevron className="shrink-0 text-ink-faint" />
-              </button>
-            ) : (
-              <div className="truncate font-medium">{special && <span className="mr-1">{special.emoji}</span>}{s.recipeName}</div>
-            )}
-            {s.note && <div className="text-xs text-ink-faint">{s.note}</div>}
-          </div>
-          <Chip color="lunch" active={s.type === 'lunch'}>{s.type === 'lunch' ? 'Lunch' : 'Dinner'}</Chip>
-        </div>
-      </li>
-    )
   }
 
   return (
@@ -242,7 +244,7 @@ export default function PlanTab({ state, actions }) {
                 <div key={g.day || 'any'}>
                   <DayHeading day={g.day} isToday={false} />
                   <ul className="space-y-2">
-                    {g.slots.map((s, i) => <PastSlotRow key={i} s={s} />)}
+                    {g.slots.map((s, i) => <PastSlotRow key={i} s={s} recipes={recipes} onView={setViewId} />)}
                   </ul>
                 </div>
               ))}
@@ -262,7 +264,10 @@ export default function PlanTab({ state, actions }) {
                   <div key={g.day || 'any'}>
                     <DayHeading day={g.day} isToday={g.day === todayLabel} />
                     <ul className="space-y-2">
-                      {g.slots.map((s, i) => <SlotCard key={s.id} s={s} group={g} posInGroup={i} />)}
+                      {g.slots.map((s, i) => (
+                        <SlotCard key={s.id} s={s} group={g} posInGroup={i} recipes={recipes}
+                          dayOpts={dayOpts} actions={actions} onView={setViewId} onCooked={cookedIt} />
+                      ))}
                     </ul>
                   </div>
                 ))}

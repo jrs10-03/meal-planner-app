@@ -3,10 +3,17 @@ import { Icon } from './Icons.jsx'
 import { ConfirmButton, EmptyState, SwipeRow, Toast } from './ui.jsx'
 import { buildShoppingList, listToText } from '../lib/aggregate.js'
 
+const LIST_SORTS = [
+  { id: 'category', label: 'By category' },
+  { id: 'az', label: 'A–Z' },
+  { id: 'meal', label: 'By meal' },
+]
+
 export default function ListTab({ state, actions }) {
   const { currentWeek, recipes, list, staples } = state
   const [manual, setManual] = useState('')
   const [toast, setToast] = useState('')
+  const sort = state.settings.listSort || 'category'
 
   const grouped = useMemo(() => {
     const slots = currentWeek?.slots || []
@@ -16,6 +23,31 @@ export default function ListTab({ state, actions }) {
       .map((g) => ({ ...g, items: g.items.filter((i) => !removed[i.key]) }))
       .filter((g) => g.items.length > 0)
   }, [currentWeek, recipes, staples, list.removed])
+
+  // Rearrange the canonical category groups for the chosen sort. Items keep
+  // their keys, so checking an item that appears under several meals checks
+  // every copy (it's still one item).
+  const displayGroups = useMemo(() => {
+    if (sort === 'az') {
+      const all = grouped.flatMap((g) => g.items).sort((a, b) => a.name.localeCompare(b.name))
+      return all.length ? [{ section: 'All items', items: all }] : []
+    }
+    if (sort === 'meal') {
+      const all = grouped.flatMap((g) => g.items)
+      const seen = new Set()
+      const out = []
+      for (const s of currentWeek?.slots || []) {
+        if (!s.recipeId || seen.has(s.recipeId)) continue
+        seen.add(s.recipeId)
+        const r = recipes.find((x) => x.id === s.recipeId)
+        if (!r) continue
+        const items = all.filter((i) => i.recipeIds.includes(s.recipeId)).sort((a, b) => a.name.localeCompare(b.name))
+        if (items.length) out.push({ section: r.name, items })
+      }
+      return out
+    }
+    return grouped
+  }, [grouped, sort, currentWeek, recipes])
 
   const totalItems = grouped.reduce((n, g) => n + g.items.length, 0) + list.manual.length
   const checkedCount = grouped.reduce((n, g) => n + g.items.filter((i) => list.checked[i.key]).length, 0)
@@ -78,14 +110,22 @@ export default function ListTab({ state, actions }) {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-3 flex gap-2">
         <input className="input" placeholder="Add a one-off item (paper towels…)" value={manual} onChange={(e) => setManual(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addManual()} />
         <button className="btn-primary" onClick={addManual}><Icon.Plus /></button>
       </div>
 
+      <div className="mb-4 flex items-center gap-2 text-xs">
+        <span className="text-ink-faint">Sort</span>
+        <select className="rounded-lg border border-line bg-surface px-2 py-1 text-ink" value={sort}
+          onChange={(e) => actions.setSetting('listSort', e.target.value)}>
+          {LIST_SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+        </select>
+      </div>
+
       <div className="space-y-5">
-        {grouped.map((grp) => {
+        {displayGroups.map((grp) => {
           const unchecked = grp.items.filter((i) => !list.checked[i.key])
           const checked = grp.items.filter((i) => list.checked[i.key])
           const ordered = [...unchecked, ...checked]
